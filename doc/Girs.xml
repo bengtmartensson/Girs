@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="xdoc2html.xsl"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" "dtds/document-v20.dtd">
+<document>
+  <header> 
+    <title>General InfraRed Server Command Language</title>
+  </header>
+<body>
+<!--note>This document is not finished yet.</note-->
+
+  <table>
+      <caption>Revision history</caption>
+	<tr>
+	  <th>Date</th><th>Description</th>
+	</tr>
+	<tr>
+	  <td>2014-01-06</td>
+	  <td>Initial version.</td>
+	</tr>
+
+      </table>
+
+<section><title>Requirements</title>
+  <ul><li>Demarcation: This deals only with sending, receiving (including decoding), storing etc of IR signals. Not: serial and other text base communication, nor the acting on received signals.</li>
+<li>However, RF signals for remote control are included, since they only differs from IR signals by using another carrier signal.</li>
+    <li>
+      Modularized, named modules containing commands (like Java interfaces). Written in capitalized CamelCase.
+    </li>
+    <li>
+      Inheritance within modules, multiple inheritance
+    </li>
+    <li>
+      Extensible: Developers can define new modules
+    </li>
+    <li>
+      Only the <a href="#Basic">Basic</a> module mandatory, containing the commands <code>version</code> and <code>modules</code>.
+    </li>
+    <li>
+      Very low-weight, should be implementable on e.g. Arduino.
+    </li>
+    <li>
+      As "dumb" as possible.
+    </li>
+    <li>
+      Basic version: text socket/serial interface. Versions using json, xml/soap, http/rest possible.
+    </li>
+    <li>
+      Authentication as optional module, several submodules for different sort of authentication.
+    </li>
+    <li>
+      Command structure: <code>command [subcommand] [options] [arguments]</code>
+    </li>
+    <li>
+      Response structure: TBD.
+    </li>
+    <li>
+      Names for IR commands, hardware: arbitrary strings using the English language, case sensitive matched using charsets.
+    </li>
+    <li>
+      Our command names: C-syntax; lowercase only, underscore
+discouraged. “get” and “set” left out unless necessary for uniqueness or
+understandability (like <code>getcommand</code>).
+    </li>
+  </ul>
+</section>  
+<section><title>Specification</title>
+<p>
+Typography: module names are in <strong>bold</strong>, command names <code>monopitch</code>.</p>
+
+<section><title>Introduction</title>
+<p>
+This list is not an unrealistic Christmas wish list, but a list of modules,
+only the first one mandatory. Through the module concept, a conforming GIRS
+server can be anything from an Arduino with just an IR sender LED and a sketch
+a few pages long, and a fat server with several input- and output-devices,
+(each) having several transmitters, combined with a full blown data base, with
+user administration and authentication.</p>
+
+<p>Note that there is a number of properties for e.g. LIRC that has been
+rejected here, in particular the ability to execute commands. (These should be
+handled by another program.)</p>
+
+<p>A capable server should probably also implement some sort of discovery beacon,
+for example AMX style.</p></section>
+
+  
+</section>
+<section><title>Modules</title>
+<section><title>Base</title>
+<p>This is the only mandatory module.</p>
+  <dl>
+    <dt><code>version</code></dt>
+<dd><ul><li>returns manufacturer, manufacturer's version number, or another
+useful version string.</li></ul></dd>
+<dt><code>modules</code></dt>
+<dd><ul><li>returns list of implemented modules, separated by whitespace.</li></ul></dd></dl>
+    </section>
+<section><title>NamedRemotes</title>
+<p>Support of remotes identified by name, like LIRC.</p>
+<dl>
+    <dt><code>
+      remotes</code>
+    </dt>
+    <dd>
+<ul><li>
+      argument named/uei: What type of remotes to report.</li>
+    <li>
+      returns: list of remotes, either names or manufacturer/device-type/setupid
+    </li></ul></dd>
+    <dt><code>
+      commands</code>
+    </dt>
+    <dd>
+<ul><li>
+      argument: remote in a supported format (mandatory)</li>
+    
+    <li>
+      returns: tab(?) separated list of command names, in currently selected char set.
+    </li></ul></dd>
+    <dt><code>database</code> (module <strong>database</strong>)</dt>
+    <dd>
+      argument: data base name. Required.
+    </dd>
+</dl>
+</section>
+<section><title>UeiRemotes</title>
+<p>Support of remotes identified by manufacturer, device type (both arbitrary
+strings), and a setup number (most commercial data bases)</p>
+<dl>    <dt><code>
+      manufacturers
+    </code></dt><dd><ul>
+    <li>
+      returns: tab separated list of manufacturers.
+    </li></ul></dd>
+    <dt><code>
+      devicetypes</code></dt>
+<dd><ul>
+    <li>
+      argument: manufacturer
+    </li>
+    <li>
+      returns: tab separated list of device types
+    </li></ul></dd>
+    <dt><code>
+      setupids
+    </code></dt><dd><ul>
+    <li>
+      arguments: manufacturer, device
+    </li>
+    <li>
+      return list of setup ids.
+    </li></ul></dd>
+    <dt><code>
+      database (module database)
+    </code></dt><dd><ul>
+    <li>
+      argument: data base name. Required.
+    </li>
+</ul>
+</dd>
+<dt><code>database-password</code> (module database)</dt>
+<dd><ul>
+    <li>
+      argument:password.
+</li></ul></dd></dl>
+
+</section>
+<section><title>OutputDevices</title>
+<p>Allows for accessing several devices; several instances of the same type:
+Names like “Greg's GlobalCaché”. (Configuration of these over this API is not
+intended.) Each has their own set of transmitters.</p>
+<dl>
+    <dt><code>
+      outputdevices
+    </code></dt><dd><ul>
+    <li>
+      returns:list of known devices
+    </li></ul></dd>
+    <dt><code>
+      outputdevice</code> Set default output-device</dt>
+<dd><ul>
+    <li>
+      argument: device name
+    </li></ul></dd>
+    <dt><code>
+      outputdevicecapacities</code></dt><dd><ul>
+    <li>
+      argument device name (optional, defaulted)
+    </li>
+    <li>
+      result: list of capacites. Possible values (extensible): fmax, fmin, zero_frequency_tolerant. Inherit to transmitters.
+</li></ul></dd></dl>
+</section>
+<section><title>InputDevices</title>
+<p>Allows for accessing several devices; several instances of the same type:
+Names like “Greg's GlobalCaché”. Configuration of these over this API is not
+planned. An input device does not possess transmitters.</p>
+<dl>
+    <dt><code>
+      inputdevices
+    </code></dt><dd><ul>
+    <li>
+      returns: list of known devices
+    </li></ul></dd>
+    <dt><code>
+      inputdevice</code> Set default input device</dt><dd><ul>
+    
+    <li>
+      argument: device name
+    </li></ul></dd>
+</dl>
+</section>
+<section><title>Transmitters</title><p>Same commands as <a
+href="#OutputDevices">OutputDevices</a>. (????)</p>
+<dl>
+    <dt><code>
+      transmitters (module transmitters)
+    </code></dt><dd><ul>
+    <li>
+      argument: output-device
+    </li></ul></dd>
+    <dt><code>
+      output-device</code></dt><dd><ul>
+    <li>
+      returns: list of transmitters, max-number-transmitters-enabled
+    </li></ul></dd>
+    <dt><code>
+      settransmitters</code> Selects default transmitter for the output device selected. <em>(TBD: Alternative: ditch the default transmitter and this command, thus transmitter argument mandatory.)</em>
+    </dt><dd>
+<ul>
+    <li>
+      <anchor id="__DdeLink__313_1765898914"/>arguments:
+<ul>
+    <li>
+      output-device (optional, use default if not given)
+    </li>
+<li><code>
+      transmitter</code> ((list of) transmitters)</li></ul></li></ul></dd>
+    <dt><code>
+      transmittercapacities
+    </code></dt><dd>
+<ul>
+    <li>
+      arguments:
+<ul>
+    <li>
+      output-device (optional, use default if not given)
+    </li>
+<li><code>
+      transmitter</code> transmitter (only one!)</li></ul></li>
+    <li>
+      result: list of capacites.Possible values (extensible): ir (connected to
+IR LED). Rf (connected to RF modulator) hard-carrier=frequency (in particular
+for RF, 433M, 868M (Hz or suffix M,k)). Inherits from outputdevicecapacities.
+</li></ul></dd></dl>
+</section>
+<section><title>Transmit</title>
+<p>Access may be restricted through user rights. There is always a default
+output device; if the <a href="#OutputDevices"><strong>OutputDevices</strong></a> module
+is implemented, there may be more.</p> 
+    <dl>
+    <dt><code>transmit</code> (semantic for repeats may be implementation dependent)</dt>
+<dd>
+<ul>
+    <li>
+      subcommands (at least module (??) has to be implemented):
+<ul>
+<li><code>ccf</code> (module ccf). Parameter: CCF string
+    </li>
+    <li>
+      <code>raw</code> (module raw). Parameter: frequency, duty cycle, intro, reps, ending.
+    </li>
+    <li>
+      <code>Irp</code> (module irp). Parameters: protocol name OR irp-protocol, parameters.
+    </li>
+    <li>
+      <code>Name</code> (module named-command). Parameters: remote (one of the suppoted formats), command name
+    </li></ul></li>
+    <li>
+      options:
+    <ul>
+    <li>
+      transmitters (module transmitter) (optional (or not?))
+    </li>
+    <li>
+      output-device (optional, otherwise use default)
+    </li>
+    <li>
+      transmit-id (module transmit-id) (optional)
+    </li>
+    <li>
+      # sends (default 1)
+    </li>
+    <li>wait (wait for command completion)
+    </li></ul></li>
+    <li>
+      returns: (after completion) confirmation command, with transmitter and transmit-id
+</li></ul></dd>
+<dt><code>
+      stop</code> (module <code>Stop</code>)</dt><dd>
+<ul>
+    <li>
+      Argument: output-device, transmitter, transmit-id (optional)
+</li></ul></dd>
+</dl>
+</section>
+<section><title>Capture</title>
+<p>for capturing (“learning”) of new remotes. Dumb command, intelligence should sit in the
+calling program.</p>
+<dl>
+    <dt><code>
+      analyze
+    </code></dt><dd>
+<ul>
+    <li>
+      Arguments: (all having sensible defaults.)
+    <ul>
+    <li>
+      input-device 
+    </li>
+    <li>
+      start-timeout 
+    </li>
+    <li>
+      capture-timeout 
+    </li>
+    <li>
+      ending-timeout 
+    </li>
+</ul></li>
+<li>
+      Returns: frequency, raw ir-sequence, optionally duty cycle.
+</li></ul></dd></dl>
+</section>
+<section><title>Receive</title>
+<p>for receiving commands, possibly for deployment solutions. Dumb command, intelligence should sit in the
+caller. Identifying start separately (like for volume control) not
+supported.</p> 
+<dl>
+    <dt><code>
+      receive
+    </code></dt><dd>
+<ul>
+    <li>
+      Arguments:
+<ul>
+    <li>
+      return format(TBD)
+    </li>
+    <li>
+      input-device
+    </li>
+    <li>
+      timeout
+    </li>
+    <li>
+      filter, syntax, (syntax, semantics TBD)
+    </li></ul></li>
+    <li>
+      subcommand named (module named-command)
+    <ul>
+    <li>
+      Return value: received command name (+ remote)
+    </li></ul></li>
+<li>subcommand decode (module decoder)
+    <ul>
+    <li>
+      Return value: protocol name, parameters
+    </li>
+</ul></li></ul></dd>
+<dt><code>relay</code> (module relay), to send events to other servers</dt>
+<dd>
+<ul>
+    <li>
+      Arguments:
+<ul>
+    <li>
+      return format (TBD)
+</li>
+<li><code>protocol</code> (http/tcp/udp/shell?)</li>
+    <li>
+      portnumber
+    </li>
+    <li>
+      ipaddress
+    </li>
+    <li>
+      filter (TBD)
+</li></ul></li></ul></dd></dl>
+</section>
+<section><title>Store</title>
+<p>allows for uploading new commands to the server. May be restricted through
+authentication and user rights.</p>
+<dl>
+    <dt><code>
+      store 
+    </code></dt><dd>
+<ul>
+    <li>
+      arguments: data base (optional), name, remote (in a supported format), signal in a form dependent on the subcommands.
+    </li>
+    <li>
+      subcommands
+    <ul>
+    <li>
+      ccf (module ccf)
+    </li>
+    <li>
+      raw (module raw)
+    </li>
+    <li>
+      irp (module irp(?))
+    </li></ul></li></ul></dd>
+    <dt><code>
+      commit</code> Stores the recently downloaded commands persistently.</dt>
+<dd><ul>
+    <li>
+      Argument: data base name (optional)
+</li></ul></dd></dl>
+</section>
+<section><title>Command</title>
+<p>allows for downloading commands from the server. Inverse of store. May be restricted through authentication and user rights.</p>
+<dl>
+    <dt><code>
+      getCommand
+    </code></dt><dd>
+<ul>
+    <li>
+      Argument:
+    <ul>
+    <li>
+      data base (optional) 
+    </li>
+    <li>
+      output format: ccf, raw, irp,... (also other can be supported)
+    </li>
+</ul></li>
+    <li>
+      Return: command in desired format.
+</li></ul></dd></dl>
+</section>
+<section><title>Authentication</title>
+<p>Several different models for access control are possible, and can be
+implemented through different modules. The first just requires a password to
+all the services. The second allows user based restrictions: Some
+commands/subcommands/arguments might be restricted to some users. Of course,
+sending passwords unencrypted over the net is not to be considered very secure,
+so preferably ssh or similar, or a challenge-response system should be
+used.</p>
+<dl>
+    <dt><code>
+      login (module password), for password protected services
+    </code></dt><dd>
+<ul>
+    <li>
+      argument: password
+    </li></ul></dd>
+<dt><code>login</code> (module <strong>UserPassword</strong>), for user/password
+protected services, possibly with different rights for different users.</dt>
+<dd>
+<ul>
+    <li>
+      argument: user, password
+    </li></ul></dd>
+    <dt><code>sshlogin</code> TBD (module <strong>ssh</strong>)</dt><dd/>
+<dt><code>logout</code></dt><dd/></dl>
+
+</section>
+<section><title>Charset</title>
+<p>Determines charset used for input and output.</p>
+<dl>
+    <dt><code>
+      charset
+    </code></dt><dd>
+<ul>
+    <li>
+      argument: charset name.
+      
+    </li>
+</ul></dd></dl>
+</section>
+</section>
+</body></document>
