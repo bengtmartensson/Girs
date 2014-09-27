@@ -17,6 +17,10 @@
 	  <td>2014-01-06</td>
 	  <td>Initial version.</td>
 	</tr>
+	<tr>
+	  <td>2014-09-16</td>
+	  <td>Added the communication section.</td>
+	</tr>
 
       </table>
 
@@ -479,5 +483,19 @@ protected services, possibly with different rights for different users.</dt>
     </li>
 </ul></dd></dl>
 </section>
+</section>
+<section><title>Communication</title>
+<p>Communication is typically taking place over a bidirectional
+ASCII stream, like serial, "terminal", connection or a through a TCP
+socket. The commands sent to the GIRS server should be of the form
+<code>command [subcommand] [options] [arguments]</code>, where
+<code>command</code> can be abreviated as much as unabiguity allows
+(typically to the initial character). The form of
+the responses should be a "natural" ASCII response in the form of one
+line (typically); the tokens separated by whitespace.</p>
+
+<p>Interacting with a GIRS server through static or dynamic linking
+can also be possible, either by decoding a command line, or with a
+number of API functions.</p>
 </section>
 </body></document>
